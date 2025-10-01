@@ -47,3 +47,6 @@ next-env.d.ts
 # fumadocs-mdx generated files
 .source/
 /lib/generated/prisma
+
+# Local Netlify folder
+.netlify
