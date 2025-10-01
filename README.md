@@ -5,6 +5,11 @@ A modern, responsive blog built with Next.js 15, Fumadocs MDX, and Tailwind CSS.
 # Source
 from repo https://github.com/magicuidesign/blog-template
 
+# what I have added
+
+- Prisma database bridge for: comments and tracking views
+- added some mdx components
+
 ## ✨ Features
 
 - 🎨 **Modern Design** - Clean, responsive interface
