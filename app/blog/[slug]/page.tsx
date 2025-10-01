@@ -49,7 +49,7 @@ export default async function BlogPost({ params }: PageProps) {
   }
 
   const MDX = page.data.body;
-  // @ts-ignore
+  // @ts-expect-error
   const date = new Date(page.data.date);
   const formattedDate = formatDate(date);
 
@@ -77,11 +77,11 @@ export default async function BlogPost({ params }: PageProps) {
               </Link>
             </Button>
             {
-              // @ts-ignore
+              // @ts-expect-error
               page.data.tags && page.data.tags.length > 0 && (
                 <div className="flex flex-wrap gap-3 text-muted-foreground">
                   {
-                    // @ts-ignore
+                    // @ts-expect-error
                     page.data.tags.map((tag: string) => (
                       <span
                         key={tag}
@@ -114,7 +114,7 @@ export default async function BlogPost({ params }: PageProps) {
           {page.data.thumbnail && (
             <div className="relative w-full h-[500px] overflow-hidden object-cover border border-transparent">
               <Image
-                // @ts-ignore
+                // @ts-expect-error
                 src={page.data.thumbnail}
                 alt={page.data.title}
                 fill
@@ -138,7 +138,7 @@ export default async function BlogPost({ params }: PageProps) {
           <div className="mt-10">
             <ReadMoreSection
               currentSlug={[slug]}
-              // @ts-ignore
+              // @ts-expect-error
               currentTags={page.data.tags}
             />
           </div>
@@ -147,7 +147,7 @@ export default async function BlogPost({ params }: PageProps) {
         <aside className="hidden lg:block w-[350px] flex-shrink-0 p-6 lg:p-10 bg-muted/60 dark:bg-muted/20">
           <div className="sticky top-20 space-y-8">
             {
-              // @ts-ignore
+              // @ts-expect-error
               page.data.author && isValidAuthor(page.data.author) && (
                 <AuthorCard author={getAuthor(page.data.author)} />
               ) as any}
