@@ -56,7 +56,7 @@ export async function GET(req: Request) {
   });
 
   // Don’t leak raw email—return masked only if showEmail is true
-  const items = rows.map((r) => ({
+  const items = rows.map((r: any) => ({
     id: r.id,
     name: r.name,
     content: r.content,
