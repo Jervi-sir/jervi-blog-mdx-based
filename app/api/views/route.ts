@@ -10,7 +10,6 @@ const VIEW_WINDOW_MIN = Number(process.env.VIEW_WINDOW_MIN ?? 360); // 6h
 function getIP(req: Request) {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
-  // @ts-ignore - Next’s Node Request may not expose .ip
   return (req as any)?.ip ?? null;
 }
 

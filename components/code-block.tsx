@@ -21,7 +21,7 @@ export default function CodeBlock({ children, className, ...rest }: PreProps) {
           ? node.map(toText).join("")
           : React.isValidElement(node)
             ?
-            // @ts-ignore
+            // @ts-expect-error
             toText(node.props.children)
             : "";
 
