@@ -5,9 +5,7 @@ import { FlatCompat } from "@eslint/eslintrc";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
@@ -20,10 +18,14 @@ const eslintConfig = [
       "@typescript-eslint/ban-ts-comment": [
         "error",
         {
-          "ts-ignore": "ban",        // ❌ forbid @ts-ignore
-          "ts-expect-error": "allow",// ✅ allow @ts-expect-error
-          "ts-nocheck": "allow",     // optional, you can "ban" if you want
-          "ts-check": "allow"
+          "ts-ignore": true,             // ❌ disallow @ts-ignore
+          "ts-expect-error": false,      // ✅ allowed
+          "ts-nocheck": false,           // allowed (set to true to ban)
+          "ts-check": false,             // allowed
+          // Optional: require description for expect-error
+          // "ts-expect-error": "allow-with-description",
+          // minimumDescriptionLength: 5,
+
         }
       ],
     },
