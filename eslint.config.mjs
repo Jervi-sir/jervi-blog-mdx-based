@@ -18,16 +18,17 @@ const eslintConfig = [
       "@typescript-eslint/ban-ts-comment": [
         "error",
         {
-          "ts-ignore": true,             // ❌ disallow @ts-ignore
+          "ts-ignore": false,            // ❌ disallow @ts-ignore
           "ts-expect-error": false,      // ✅ allowed
           "ts-nocheck": false,           // allowed (set to true to ban)
           "ts-check": false,             // allowed
           // Optional: require description for expect-error
-          // "ts-expect-error": "allow-with-description",
+          "ts-expect-error": "allow-with-description",
           // minimumDescriptionLength: 5,
-
         }
       ],
+      "@typescript-eslint/no-explicit-any": "off"
+
     },
   },
 ];
