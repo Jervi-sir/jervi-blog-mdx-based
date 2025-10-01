@@ -1,0 +1,220 @@
+---
+title: "Next.js App on a VPS (Hetzner) in traditional way"
+description: "Clone your repo, install Node, build your Next.js app, run it on a custom port, and keep it alive with PM2."
+date: "2024-12-02"
+tags: ["Deployment"]
+keywords: ["Next.js", "VPS", "PM2", "Ubuntu", "Deployment"]
+featured: true
+readTime: "12 min read"
+author: "Your Name"
+---
+
+> To Create a VPS check this first. [Create Ubuntu VPS on Hetzner](/blog/create-and-setup-ubuntu-vps-on-hetzner)
+
+
+<CalloutWithImage image="https://nhzslwvtivzxkrbsaemj.supabase.co/storage/v1/object/sign/jervi/Pi7compressedScreenshot2025-10-01210207%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jZWMyNzI1ZS00NzM0LTRjZjYtYmE0NS02NDVkMTU3MTRiYzIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJqZXJ2aS9QaTdjb21wcmVzc2VkU2NyZWVuc2hvdDIwMjUtMTAtMDEyMTAyMDcgKDEpLnBuZyIsImlhdCI6MTc1OTM1MDUzMywiZXhwIjoxNzkwODg2NTMzfQ.N6i7SSj2Ai-tbyR5xBQ04X_2fc1VR9yUSahFcLyFmHo" alt="Hetzner VPS">
+
+This guide mirrors what platforms like Vercel do:
+1) fetch your code, 
+2) build it, 
+3) run it on a port, 
+4) keep it online 24/7, 
+5) (later) put **Nginx** in front.
+
+</CalloutWithImage>
+
+
+---
+
+## SSH into your VPS (as your non-root user)
+
+```bash
+ssh jervi@<your-server-ip>
+```
+
+> Replace `<your-server-ip>` with your actual IP.  
+> Make sure your firewall allows SSH: `sudo ufw allow 22/tcp`.
+
+---
+
+## Install Node.js (LTS) using `nvm` (recommended)
+
+```bash
+# one-time nvm install
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+# load nvm for current shell
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+
+# install and use latest LTS
+nvm install --lts
+nvm use --lts
+
+# verify
+node -v
+npm -v
+```
+
+> If you prefer `apt`/NodeSource, that also works. `nvm` keeps Node per-user and is easy to upgrade.
+
+---
+
+## Clone your repository & install dependencies
+
+```bash
+# choose a home dir for apps
+mkdir -p ~/apps && cd ~/apps
+
+# clone your Next.js repo
+git clone https://github.com/<you>/<repo>.git my-next-app
+cd my-next-app
+
+# install deps (npm shown; yarn/pnpm also fine)
+npm i
+```
+
+If your project uses a private repo, set up a deploy key or use a PAT.
+
+---
+
+## Prepare environment variables
+
+Create a production `.env` in the project root (don’t commit secrets):
+
+```bash
+nano .env
+```
+
+Example:
+
+```dotenv
+NODE_ENV=production
+NEXT_PUBLIC_API_BASE=https://api.example.com
+# any other secrets...
+```
+
+Save & exit.
+
+---
+
+## Build the app
+
+```bash
+npm run build
+```
+
+- Fix any errors that appear (missing env vars, TypeScript issues, etc.).
+- After a successful build, you’ll have a `.next/` folder.
+
+---
+
+## Run the app on a custom port (test first)
+
+Locally test on the server (foreground):
+
+```bash
+# IMPORTANT: Next.js uses "next start" for production
+npx next start -p 3001
+```
+
+If it boots, open another terminal and allow the port through UFW:
+
+```bash
+sudo ufw allow 3001/tcp
+```
+
+Now hit `http://<your-server-ip>:3001` from your browser.  
+When done testing, stop the foreground process (`Ctrl+C`).
+
+---
+
+## Keep it alive with PM2
+
+Install PM2 globally (per current Node):
+
+```bash
+npm i -g pm2
+```
+
+Start your app with PM2:
+
+```bash
+# Option A: use your package.json start script (recommended)
+# package.json should have: "start": "next start -p 3001"
+pm2 start "npm run start" --name nextjs-app
+
+# Option B: invoke next directly via npx
+# pm2 start npx --name nextjs-app -- next start -p 3001
+```
+
+Check status & logs:
+
+```bash
+pm2 status
+pm2 logs nextjs-app
+```
+
+Make PM2 auto-start on reboot and save the process list:
+
+```bash
+pm2 startup
+# follow the command PM2 prints (usually sudo env PATH=... pm2 startup systemd -u jervi --hp /home/jervi)
+pm2 save
+```
+
+> From now on, if the server reboots, PM2 will bring your app back.
+
+---
+
+## Quick health check
+
+```bash
+curl -I http://127.0.0.1:3001
+```
+
+You should see `200` or `304` from your Next.js server.
+
+---
+
+## Firewall recap (UFW)
+
+If you haven’t already:
+
+```bash
+sudo ufw allow 22/tcp     # SSH
+sudo ufw allow 3001/tcp   # Next.js app port (temporary until we add Nginx)
+sudo ufw status
+```
+
+> **Tip:** When you later put Nginx in front on ports **80/443**, you can **close 3001** publicly and keep it internal.
+
+---
+
+## Operational tips
+
+- **Deploy updates**
+  ```bash
+  cd ~/apps/my-next-app
+  git pull
+  npm i --production=false   # or your lockfile flow
+  npm run build
+  pm2 restart nextjs-app
+  ```
+- **View live logs**  
+  `pm2 logs nextjs-app`
+- **Update Node (via nvm)**  
+  `nvm install --lts && nvm use --lts && pm2 restart nextjs-app`
+- **Change port**  
+  Update your `start` script or PM2 command to `-p 3002`, allow via UFW, then restart.
+
+---
+
+## What about Nginx, domain & HTTPS?
+
+We’ll cover that in **another tutorial**:
+- Reverse proxy on **:80 / :443** to your app on **:3001**  
+- Free TLS with **Let’s Encrypt (certbot)**  
+- Auto-renewal & hardened TLS settings  
+- Optionally close port **3001** to the public
+
+> 👉 _Coming soon:_ **“Put Nginx + HTTPS in front of your Next.js VPS app.”**
