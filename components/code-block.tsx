@@ -16,12 +16,14 @@ export default function CodeBlock({ children, className, ...rest }: PreProps) {
     node == null
       ? ""
       : typeof node === "string" || typeof node === "number"
-      ? String(node)
-      : Array.isArray(node)
-      ? node.map(toText).join("")
-      : React.isValidElement(node)
-      ? toText(node.props.children)
-      : "";
+        ? String(node)
+        : Array.isArray(node)
+          ? node.map(toText).join("")
+          : React.isValidElement(node)
+            ?
+            // @ts-ignore
+            toText(node.props.children)
+            : "";
 
   const lang =
     ((children as any)?.props?.className || "")
@@ -36,7 +38,7 @@ export default function CodeBlock({ children, className, ...rest }: PreProps) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
-    } catch {}
+    } catch { }
   };
 
   return (

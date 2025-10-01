@@ -34,14 +34,14 @@ export async function generateMetadata({
     }
 
     const ogUrl = `${siteConfig.url}/blog/${slug}`;
-    const ogImage = `${ogUrl}/opengraph-image`;
+    // const ogImage = `${ogUrl}/opengraph-image`;
 
     return {
       title: page.data.title,
       description: page.data.description,
       keywords: [
         page.data.title,
-        ...(page.data.tags || []),
+        // ...(page.data.tags || []),
         "Blog",
         "Article",
         "Web Development",
@@ -51,12 +51,12 @@ export async function generateMetadata({
       ],
       authors: [
         {
-          name: page.data.author || "Magic UI",
+          // name: page.data.author || "Jervi",
           url: siteConfig.url,
         },
       ],
-      creator: page.data.author || "Magic UI",
-      publisher: "Magic UI",
+      // creator: page.data.author || "Jervi",
+      publisher: "Jervi",
       robots: {
         index: true,
         follow: true,
@@ -71,14 +71,11 @@ export async function generateMetadata({
       openGraph: {
         title: page.data.title,
         description: page.data.description,
-        type: "article",
         url: ogUrl,
-        publishedTime: page.data.date,
-        authors: [page.data.author || "Magic UI"],
-        tags: page.data.tags,
+        countryName: "Algeria - dz",
         images: [
           {
-            url: page.data.thumbnail || ogImage,
+            url: '/images/jervi.png',   //  || ogImage
             width: 1200,
             height: 630,
             alt: page.data.title,
@@ -90,9 +87,9 @@ export async function generateMetadata({
         card: "summary_large_image",
         title: page.data.title,
         description: page.data.description,
-        images: [page.data.thumbnail || ogImage],
-        creator: "@dillionverma",
-        site: "@dillionverma",
+        // images: [page.data.thumbnail || ogImage],
+        creator: "@gacem_humen",
+        site: "@jervi",
       },
       alternates: {
         canonical: ogUrl,

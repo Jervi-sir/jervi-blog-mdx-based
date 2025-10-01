@@ -23,10 +23,10 @@ function hashIP(ip: string | null | undefined) {
   return crypto.createHash("sha256").update(base + salt).digest("hex");
 }
 
-function hashEmail(email: string) {
-  const salt = process.env.COMMENT_SALT ?? "";
-  return crypto.createHash("sha256").update(email.toLowerCase() + "|" + salt).digest("hex");
-}
+// function hashEmail(email: string) {
+//   const salt = process.env.COMMENT_SALT ?? "";
+//   return crypto.createHash("sha256").update(email.toLowerCase() + "|" + salt).digest("hex");
+// }
 
 function maskEmail(email: string) {
   // simple mask: keep first char of local & domain labels
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       null;
     const ipHash = hashIP(ip);
     const since = new Date(Date.now() - 60 * 60 * 1000);
-    const emailHash = hashEmail(email);
+    // const emailHash = hashEmail(email);
 
     const recentCount = await prisma.blogComment.count({
       where: { email, ipHash, createdAt: { gte: since } },
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
         name,
         email,
         showEmail,   // ← persist the consent
-        emailHash,   // ← optional analytics/dedupe
+        // emailHash,   // ← optional analytics/dedupe
         content,
         ipHash,
         userAgent: ua,

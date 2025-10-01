@@ -63,7 +63,7 @@ export function CommentSection({ slug, className }: { slug: string; className?: 
         setForm({ name: "", email: "", content: "" });
         await mutate();
       }
-    } catch (err) {
+    } catch {
       setError("Network error");
     } finally {
       setSubmitting(false);

@@ -180,14 +180,14 @@ export default async function Image({ params }: { params: { slug: string } }) {
 
     const assetData = await getAssetData(authorDetails?.avatar);
 
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    };
+    // const formatDate = (dateString: string) => {
+    //   const date = new Date(dateString);
+    //   return date.toLocaleDateString("en-US", {
+    //     year: "numeric",
+    //     month: "long",
+    //     day: "numeric",
+    //   });
+    // };
 
     return new ImageResponse(
       (
@@ -232,14 +232,14 @@ export default async function Image({ params }: { params: { slug: string } }) {
                   <span>{authorDetails.name}</span>
                 </div>
               )}
-              {authorDetails && page.data.date && (
+              {/* {authorDetails && page.data.date && (
                 <span style={styles.dotSeparator}>•</span>
-              )}
-              {page.data.date && (
+              )} */}
+              {/* {page.data.date && (
                 <p style={{ ...styles.metaBase, ...styles.dateMeta }}>
                   {formatDate(page.data.date)}
                 </p>
-              )}
+              )} */}
             </div>
           </div>
         </div>
