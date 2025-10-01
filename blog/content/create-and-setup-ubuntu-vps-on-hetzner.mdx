@@ -1,0 +1,148 @@
+---
+title: "How to Create and Setup Ubuntu VPS on Hetzner"
+description: "Step-by-step tutorial for creating a VPS on Hetzner Cloud, installing Ubuntu Desktop, enabling GUI access with NoMachine, and securing it with a firewall."
+date: "2024-12-01"
+tags: ["Deployment"]
+keywords: ["Hetzner", "Ubuntu", "VPS", "NoMachine", "Tutorial"]
+featured: true
+readTime: "8 min read"
+author: "Jervi"
+---
+
+This guide will walk you through **creating a VPS on Hetzner Cloud**, installing Ubuntu Desktop, setting up **NoMachine** for GUI access, and configuring a firewall.
+
+---
+
+## 1. Create a VPS on Hetzner
+
+1. Go to [Hetzner Cloud](https://www.hetzner.com/cloud).
+2. Create a new project (if you don’t have one yet).
+3. Click **Add Server**.
+4. Choose the following options:
+   - **Location:** Closest to your users (e.g., Germany, Finland, US).
+   - **Image:** Ubuntu (latest LTS recommended).
+   - **Architecture:** **x86 (Intel/AMD)** → better compatibility than ARM64.
+   - **Type:** CX21 or higher (2 vCPU / 4 GB RAM is a good start).
+   - **Volume:** At least 40 GB SSD.
+5. Add your **SSH key** or generate one if you don’t have it.
+6. Click **Create & Buy Now**.
+
+👉 Video walkthrough: [How to create a VPS on Hetzner](https://www.youtube.com/watch?v=mnFQ2mGJnXI)
+
+Once created, Hetzner will provide you with an IP address.
+
+---
+
+## 2. Connect to Your VPS via SSH
+
+From your local terminal:
+
+```bash
+ssh root@<your-server-ip>
+```
+
+Replace `<your-server-ip>` with the IP shown in Hetzner’s dashboard.
+here is an example
+
+```bash
+ssh root@123.456.789.123
+```
+
+---
+
+## 3. Update & Install Ubuntu Desktop
+
+Update packages and install a desktop environment:
+
+```bash
+sudo apt update -y
+sudo apt install xfce4 xfce4-goodies -y
+sudo apt-get install iptables -y
+sudo apt install net-tools -y
+```
+
+---
+
+## 4. Create a New User
+
+Instead of using `root`, create a safe non-root user:
+
+```bash
+adduser jervi
+adduser jervi sudo
+usermod -aG sudo jervi
+```
+
+---
+
+## 5. Install NoMachine (for GUI Access)
+
+NoMachine lets you access your VPS with a desktop interface.
+
+### Step 1: Download package
+```bash
+wget https://download.nomachine.com/download/8.9/Linux/nomachine_8.9.1_1_amd64.deb
+```
+
+### Step 2: Install dependencies
+```bash
+sudo apt install libpng16-16 libjack-jackd2-0 -y
+```
+
+### Step 3: Install NoMachine
+```bash
+sudo dpkg -i nomachine_8.9.1_1_amd64.deb
+```
+
+### Step 4: Start NoMachine service
+```bash
+/usr/NX/bin/nxserver --status
+/usr/NX/bin/nxserver --start
+/usr/NX/bin/nxserver --startup
+```
+
+Now you can connect from your computer using the **NoMachine client** and the VPS IP address.
+
+---
+
+## 6. Secure the Server with Firewall (UFW)
+
+Enable UFW and allow essential ports:
+
+```bash
+sudo apt install ufw -y
+sudo ufw enable
+sudo ufw allow ssh
+sudo ufw allow 22
+sudo ufw allow 4000/tcp
+sudo ufw allow 80/tcp   # Web
+sudo ufw allow 443/tcp  # HTTPS
+sudo ufw allow 22/tcp   # SSH (to be safe)
+sudo ufw reload
+```
+
+Note that you are obliged to allow ssh and port 22 even if it is the same
+also if you have changed the ssh port, then allow it too
+
+---
+
+## ✅ Your Hetzner VPS is Ready!
+
+- Ubuntu Desktop is installed.  
+- A safe user (`jervi`) is created.  
+- NoMachine GUI access is available.  
+- Firewall is protecting your VPS.  
+
+👉 Next step: you can start installing your preferred software, development stack, or deploy apps.
+
+## How to connect to this new VPS user via SSH
+
+```bash
+ssh jervi@<your-server-ip>
+```
+
+---
+
+```tsx
+🎉 Your Ubuntu VPS on Hetzner is ready!
+```

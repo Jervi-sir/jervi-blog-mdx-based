@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model BlogComment {
+  id         String   @id @default(cuid())
+  slug       String   // Blog slug this comment belongs to
+  name       String?  // optional display name
+  email      String   // stored as provided (you can hash if preferred)
+  showEmail  Boolean  @default(false) // <— NEW: user consent for displaying email
+  content    String
+  approved   Boolean  @default(true) // flip to false if you want moderation
+  ipHash     String?  // ip-address hash (for rate limiting)
+  userAgent  String?  // optional
+  createdAt  DateTime @default(now())
+
+  @@index([slug, createdAt])
+}
+
+model BlogStat {
+  slug      String   @id         // blog slug
+  views     Int      @default(0) // total views
+  updatedAt DateTime @updatedAt
+}
+
+model BlogView {
+  id        String   @id @default(cuid())
+  slug      String
+  ip        String?   // <-- new: raw IP
+  ipHash    String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([slug, createdAt])
+  @@index([slug, ipHash, createdAt])
+}
