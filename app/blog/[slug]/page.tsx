@@ -48,10 +48,18 @@ export default async function BlogPost({ params }: PageProps) {
     notFound();
   }
 
+  function coerceDate(value: unknown): Date | null {
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    if (typeof value === "string" || typeof value === "number") {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+
   const MDX = page.data.body;
-  // @ts-expect-error
-  const date = new Date(page.data.date);
-  const formattedDate = formatDate(date);
+  const parsedDate = coerceDate(page.data.date); // ← safe narrow
+  const formattedDate = parsedDate ? formatDate(parsedDate) : "";
 
   return (
     <div className="min-h-screen bg-background">
