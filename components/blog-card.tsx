@@ -24,7 +24,7 @@ export function BlogCard({
         // "before:bg-border  after:bg-border",
         // showRightBorder && "md:border-r border-border border-b-0",
         "border rounded-xl",
-        "h-40"
+        "min-h-40"
         // "max-w-3xl"
       )}
     >

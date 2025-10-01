@@ -46,7 +46,7 @@ export function PromoContent({
     >
       <div className="flex flex-col gap-4">
         <img
-          src="/magicui-pro.png"
+          src="/jervi.png"
           alt="Magic UI"
           className="w-full h-40 rounded-md object-cover"
         />
