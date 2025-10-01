@@ -84,22 +84,18 @@ export default async function BlogPost({ params }: PageProps) {
                 <span className="sr-only">Back to all articles</span>
               </Link>
             </Button>
-            {
-              // @ts-expect-error
-              page.data.tags && page.data.tags.length > 0 && (
-                <div className="flex flex-wrap gap-3 text-muted-foreground">
-                  {
-                    // @ts-expect-error
-                    page.data.tags.map((tag: string) => (
-                      <span
-                        key={tag}
-                        className="h-6 w-fit px-3 text-sm font-medium bg-muted text-muted-foreground rounded-md border flex items-center justify-center"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                </div>
-              ) as any}
+            {Array.isArray(page.data.tags) && page.data.tags.length > 0 && (
+              <div className="flex flex-wrap gap-3 text-muted-foreground">
+                {page.data.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="h-6 w-fit px-3 text-sm font-medium bg-muted text-muted-foreground rounded-md border flex items-center justify-center"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
             <time className="font-medium text-muted-foreground">
               {formattedDate}
             </time>
@@ -122,7 +118,7 @@ export default async function BlogPost({ params }: PageProps) {
           {page.data.thumbnail && (
             <div className="relative w-full h-[500px] overflow-hidden object-cover border border-transparent">
               <Image
-                // @ts-expect-error
+                // @ts-ignore
                 src={page.data.thumbnail}
                 alt={page.data.title}
                 fill
@@ -146,7 +142,7 @@ export default async function BlogPost({ params }: PageProps) {
           <div className="mt-10">
             <ReadMoreSection
               currentSlug={[slug]}
-              // @ts-expect-error
+              // @ts-ignore
               currentTags={page.data.tags}
             />
           </div>
@@ -155,7 +151,7 @@ export default async function BlogPost({ params }: PageProps) {
         <aside className="hidden lg:block w-[350px] flex-shrink-0 p-6 lg:p-10 bg-muted/60 dark:bg-muted/20">
           <div className="sticky top-20 space-y-8">
             {
-              // @ts-expect-error
+              // @ts-ignore
               page.data.author && isValidAuthor(page.data.author) && (
                 <AuthorCard author={getAuthor(page.data.author)} />
               ) as any}
