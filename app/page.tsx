@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { BlogCard } from "@/components/blog-card";
 import { TagFilter } from "@/components/tag-filter";
 import { FlickeringGrid } from "@/components/magicui/flickering-grid";
-import { TableOfContents } from "@/components/table-of-contents";
 import { SocialCards } from "@/components/social-card";
 import { AuthorCard } from "@/components/author-card";
 import { Card } from "fumadocs-ui/components/card";

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface BlogCardProps {
@@ -16,8 +15,6 @@ export function BlogCard({
   title,
   description,
   date,
-  thumbnail,
-  showRightBorder = true,
 }: BlogCardProps) {
   return (
     <Link

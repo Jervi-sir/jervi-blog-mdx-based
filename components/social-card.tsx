@@ -1,4 +1,4 @@
-import { Github, Instagram, Linkedin, Music } from "lucide-react"; // Music = TikTok
+import { Github, Instagram, Linkedin } from "lucide-react"; // Music = TikTok
 import Link from "next/link";
 
 interface SocialCardProps {

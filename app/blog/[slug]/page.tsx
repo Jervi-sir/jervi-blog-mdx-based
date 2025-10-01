@@ -12,7 +12,6 @@ import { TableOfContents } from "@/components/table-of-contents";
 import { MobileTableOfContents } from "@/components/mobile-toc";
 import { AuthorCard } from "@/components/author-card";
 import { ReadMoreSection } from "@/components/read-more-section";
-import { PromoContent } from "@/components/promo-content";
 import { getAuthor, isValidAuthor } from "@/lib/authors";
 import { FlickeringGrid } from "@/components/magicui/flickering-grid";
 import { HashScrollHandler } from "@/components/hash-scroll-handler";
@@ -50,6 +49,7 @@ export default async function BlogPost({ params }: PageProps) {
   }
 
   const MDX = page.data.body;
+  // @ts-ignore
   const date = new Date(page.data.date);
   const formattedDate = formatDate(date);
 
@@ -76,18 +76,22 @@ export default async function BlogPost({ params }: PageProps) {
                 <span className="sr-only">Back to all articles</span>
               </Link>
             </Button>
-            {page.data.tags && page.data.tags.length > 0 && (
-              <div className="flex flex-wrap gap-3 text-muted-foreground">
-                {page.data.tags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="h-6 w-fit px-3 text-sm font-medium bg-muted text-muted-foreground rounded-md border flex items-center justify-center"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) as any}
+            {
+              // @ts-ignore
+              page.data.tags && page.data.tags.length > 0 && (
+                <div className="flex flex-wrap gap-3 text-muted-foreground">
+                  {
+                    // @ts-ignore
+                    page.data.tags.map((tag: string) => (
+                      <span
+                        key={tag}
+                        className="h-6 w-fit px-3 text-sm font-medium bg-muted text-muted-foreground rounded-md border flex items-center justify-center"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+              ) as any}
             <time className="font-medium text-muted-foreground">
               {formattedDate}
             </time>
@@ -110,6 +114,7 @@ export default async function BlogPost({ params }: PageProps) {
           {page.data.thumbnail && (
             <div className="relative w-full h-[500px] overflow-hidden object-cover border border-transparent">
               <Image
+                // @ts-ignore
                 src={page.data.thumbnail}
                 alt={page.data.title}
                 fill
@@ -133,6 +138,7 @@ export default async function BlogPost({ params }: PageProps) {
           <div className="mt-10">
             <ReadMoreSection
               currentSlug={[slug]}
+              // @ts-ignore
               currentTags={page.data.tags}
             />
           </div>
@@ -140,9 +146,11 @@ export default async function BlogPost({ params }: PageProps) {
 
         <aside className="hidden lg:block w-[350px] flex-shrink-0 p-6 lg:p-10 bg-muted/60 dark:bg-muted/20">
           <div className="sticky top-20 space-y-8">
-            {page.data.author && isValidAuthor(page.data.author) && (
-              <AuthorCard author={getAuthor(page.data.author)} />
-            ) as any}
+            {
+              // @ts-ignore
+              page.data.author && isValidAuthor(page.data.author) && (
+                <AuthorCard author={getAuthor(page.data.author)} />
+              ) as any}
             <div className="border border-border rounded-lg p-6 bg-card">
               <TableOfContents />
             </div>

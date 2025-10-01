@@ -7,9 +7,6 @@ import {
   VideoViewer,
 } from "@/components/media-viewer";
 import {
-  TutorialLink,
-} from "@/components/tutorial-link";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
