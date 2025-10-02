@@ -1,0 +1,166 @@
+---
+title: "Domain name and HTTPS on Ubuntu VPS with Nginx"
+description: "Register a domain on Namecheap, point it to your VPS, configure Nginx with sites-available/sites-enabled, and secure it with free SSL using Certbot."
+date: "2025-10-02"
+tags: ["Deployment"]
+keywords: ["Nginx", "VPS", "Namecheap", "SSL", "Certbot", "Ubuntu"]
+featured: true
+readTime: "12 min read"
+author: "Jervi"
+---
+
+This guide walks you through:
+
+* Registering a domain on **Namecheap**
+* Pointing it to your VPS IP
+* Configuring **Nginx** with `sites-available`
+* Securing it with **free SSL via Certbot**
+
+---
+
+## 1. Register a Domain on Namecheap
+
+1. Go to [Namecheap](https://www.namecheap.com/) and purchase a domain.
+2. In **Domain List → Manage → Advanced DNS**, add these records:
+
+   * Root domain (`@`) → your VPS IP
+   * Subdomain (`www`) → your VPS IP
+
+Example:
+
+```txt
+Host: @     | Value: <your-vps-ip> | TTL: Automatic
+Host: www   | Value: <your-vps-ip> | TTL: Automatic
+```
+
+👉 Test after a few minutes with:
+
+```bash
+ping yourdomain.com
+```
+
+---
+
+## 2. Install Nginx on Your VPS
+
+SSH into your VPS:
+
+```bash
+ssh user@<your-server-ip>
+sudo apt update && sudo apt install nginx -y
+```
+
+Verify it’s running:
+
+```bash
+systemctl status nginx
+```
+
+Default page is available at `http://<your-vps-ip>`.
+
+---
+
+## 3. Configure Firewall (UFW)
+
+Allow web traffic and secure the firewall:
+
+```bash
+sudo ufw allow 'Nginx Full'
+sudo ufw allow OpenSSH
+sudo ufw enable
+sudo ufw status
+```
+
+---
+
+## 4. Create Nginx Config for Your Domain
+
+Inside `/etc/nginx/sites-available`, create a file for your domain:
+
+```bash
+sudo nano /etc/nginx/sites-available/yourdomain.com
+```
+
+Paste this basic config:
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    root /var/www/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+```
+
+Enable it by linking to `sites-enabled`:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/yourdomain.com /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Now `http://yourdomain.com` should work.
+
+---
+
+## 5. Secure with SSL (Certbot + Let’s Encrypt)
+
+Install Certbot:
+
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+```
+
+Run Certbot:
+
+```bash
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+```
+
+Follow prompts:
+
+* Enter your email
+* Accept terms
+* Choose **redirect HTTP → HTTPS**
+
+Certbot updates your config automatically.
+
+Test auto-renew:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+---
+
+## 6. Verify HTTPS
+
+Visit:
+
+* ✅ [https://yourdomain.com](https://yourdomain.com)
+* ✅ [https://www.yourdomain.com](https://www.yourdomain.com)
+
+You should see the secure lock icon 🔒.
+
+---
+
+## ✅ Done!
+
+* Domain registered on **Namecheap**
+* DNS pointed to VPS
+* Nginx configured with `sites-available/sites-enabled`
+* Free SSL certificate installed with **Certbot**
+
+```tsx
+🎉 Your VPS is now serving a domain with HTTPS!
+```
+
+---
+
+👉 Next step: host multiple domains or subdomains on the same VPS using Nginx server blocks.
