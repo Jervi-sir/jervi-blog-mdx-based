@@ -20,7 +20,8 @@ export function SiteNav() {
         </div>
 
         <div className="flex flex-1 w-full justify-end">
-          <nav className="flex items-center">
+          <nav className="flex items-center space-x-2">
+            <p>theme →</p>
             <ThemeToggle />
           </nav>
         </div>
