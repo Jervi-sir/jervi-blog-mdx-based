@@ -1,32 +1,19 @@
-import { Metadata } from "next";
-import { docs, meta } from "@/.source";
-import { loader } from "fumadocs-core/source";
-import { createMDXSource } from "fumadocs-mdx";
+// app/blog/[slug]/metadata.ts
+import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
+import { prisma } from "@/lib/prisma";
 
-const blogSource = loader({
-  baseUrl: "/blog",
-  source: createMDXSource(docs, meta),
-});
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: { params: { slug: string } }
+): Promise<Metadata> {
   try {
-    const { slug } = await params;
+    const { slug } = params;
 
-    if (!slug || slug.length === 0) {
-      return {
-        title: "Blog Not Found",
-        description: "The requested blog post could not be found.",
-      };
-    }
+    const post = await prisma.blogPost.findUnique({
+      where: { slug },
+    });
 
-    const page = blogSource.getPage([slug]);
-
-    if (!page) {
+    if (!post || !post.published) {
       return {
         title: "Blog Not Found",
         description: "The requested blog post could not be found.",
@@ -34,28 +21,16 @@ export async function generateMetadata({
     }
 
     const ogUrl = `${siteConfig.url}/blog/${slug}`;
-    // const ogImage = `${ogUrl}/opengraph-image`;
 
     return {
-      title: page.data.title,
-      description: page.data.description,
+      title: post.title,
+      description: post.description ?? undefined,
       keywords: [
-        page.data.title,
-        // ...(page.data.tags || []),
+        post.title,
+        ...post.tags,
         "Blog",
         "Article",
-        "Web Development",
-        "Programming",
-        "Technology",
-        "Software Engineering",
       ],
-      authors: [
-        {
-          // name: page.data.author || "Jervi",
-          url: siteConfig.url,
-        },
-      ],
-      // creator: page.data.author || "Jervi",
       publisher: "Jervi",
       robots: {
         index: true,
@@ -69,25 +44,24 @@ export async function generateMetadata({
         },
       },
       openGraph: {
-        title: page.data.title,
-        description: page.data.description,
+        title: post.title,
+        description: post.description ?? undefined,
         url: ogUrl,
         countryName: "Algeria - dz",
         images: [
           {
-            url: '/images/jervi.png',   //  || ogImage
+            url: post.thumbnailUrl || "/images/jervi.png",
             width: 1200,
             height: 630,
-            alt: page.data.title,
+            alt: post.title,
           },
         ],
         siteName: siteConfig.name,
       },
       twitter: {
         card: "summary_large_image",
-        title: page.data.title,
-        description: page.data.description,
-        // images: [page.data.thumbnail || ogImage],
+        title: post.title,
+        description: post.description ?? undefined,
         creator: "@gacem_humen",
         site: "@jervi",
       },

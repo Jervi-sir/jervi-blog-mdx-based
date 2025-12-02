@@ -1,65 +1,77 @@
-import { docs, meta } from "@/.source";
-import { DocsBody } from "fumadocs-ui/page";
-import { loader } from "fumadocs-core/source";
-import { createMDXSource } from "fumadocs-mdx";
+// app/blog/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { DocsBody } from "fumadocs-ui/page";
+import { MDXRemote } from "next-mdx-remote/rsc";
 
+import { Button } from "@/components/ui/button";
 import { TableOfContents } from "@/components/table-of-contents";
 import { MobileTableOfContents } from "@/components/mobile-toc";
-import { AuthorCard } from "@/components/author-card";
 import { ReadMoreSection } from "@/components/read-more-section";
-import { getAuthor, isValidAuthor } from "@/lib/authors";
 import { FlickeringGrid } from "@/components/magicui/flickering-grid";
 import { HashScrollHandler } from "@/components/hash-scroll-handler";
-import { CommentSection } from "@/components/comment-section";
 import { ViewCounter } from "@/components/view-counter";
+import { useMDXComponents } from "@/mdx-components";
+import { prisma } from "@/lib/prisma";
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ preview?: string }>;
+};
+
+function coerceDate(value: unknown): Date | null {
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (typeof value === "string" || typeof value === "number") {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 }
 
-const blogSource = loader({
-  baseUrl: "/blog",
-  source: createMDXSource(docs, meta),
-});
-
-const formatDate = (date: Date): string => {
+function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-};
+}
 
-export default async function BlogPost({ params }: PageProps) {
+async function getPost(slug: string, preview = false) {
+  if (!slug) return null;
+
+  const post = await prisma.blogPost.findUnique({
+    where: { slug },
+  });
+
+  if (!post) return null;
+
+  // Only published for normal visitors; allow draft for preview
+  if (!post.published && !preview) return null;
+
+  return post;
+}
+
+export default async function BlogPost({ params, searchParams }: PageProps) {
+  // ✅ await the dynamic APIs
   const { slug } = await params;
+  const resolvedSearchParams = searchParams
+    ? await searchParams
+    : undefined;
 
-  if (!slug || slug.length === 0) {
+  const previewMode = resolvedSearchParams?.preview === "1";
+
+  const post = await getPost(slug, previewMode);
+
+  if (!post) {
     notFound();
   }
 
-  const page = blogSource.getPage([slug]);
-
-  if (!page) {
-    notFound();
-  }
-
-  function coerceDate(value: unknown): Date | null {
-    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
-    if (typeof value === "string" || typeof value === "number") {
-      const d = new Date(value);
-      return isNaN(d.getTime()) ? null : d;
-    }
-    return null;
-  }
-
-  const MDX = page.data.body;
-  const parsedDate = coerceDate(page.data.date); // ← safe narrow
+  const parsedDate = coerceDate(post.publishedAt ?? post.createdAt);
   const formattedDate = parsedDate ? formatDate(parsedDate) : "";
+
+  const components = useMDXComponents();
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,9 +96,10 @@ export default async function BlogPost({ params }: PageProps) {
                 <span className="sr-only">Back to all articles</span>
               </Link>
             </Button>
-            {Array.isArray(page.data.tags) && page.data.tags.length > 0 && (
+
+            {Array.isArray(post.tags) && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-3 text-muted-foreground">
-                {page.data.tags.map((tag) => (
+                {post.tags.map((tag) => (
                   <span
                     key={tag}
                     className="h-6 w-fit px-3 text-sm font-medium bg-muted text-muted-foreground rounded-md border flex items-center justify-center"
@@ -96,77 +109,85 @@ export default async function BlogPost({ params }: PageProps) {
                 ))}
               </div>
             )}
-            <time className="font-medium text-muted-foreground">
-              {formattedDate}
-            </time>
+
+            {formattedDate && (
+              <time className="font-medium text-muted-foreground">
+                {formattedDate}
+              </time>
+            )}
+
+            {previewMode && (
+              <span className="text-xs uppercase font-semibold text-amber-500 ml-auto">
+                Preview mode
+              </span>
+            )}
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tighter text-balance">
-            {page.data.title}
+            {post.title}
           </h1>
 
-          {page.data.description && (
+          {post.description && (
             <p className="text-muted-foreground max-w-4xl md:text-lg md:text-balance">
-              {page.data.description}
+              {post.description}
             </p>
           )}
         </div>
       </div>
+
       <div className="flex divide-x divide-border relative max-w-7xl mx-auto px-4 md:px-0 z-10">
         <div className="absolute max-w-7xl mx-auto left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] lg:w-full h-full border-x border-border p-0 pointer-events-none" />
         <main className="w-full p-0 overflow-hidden">
-          {page.data.thumbnail && (
+          {post.thumbnailUrl && (
             <div className="relative w-full h-[500px] overflow-hidden object-cover border border-transparent">
               <Image
-                // @ts-ignore
-                src={page.data.thumbnail}
-                alt={page.data.title}
+                src={post.thumbnailUrl}
+                alt={post.title}
                 fill
                 className="object-cover"
                 priority
               />
             </div>
-          ) as any}
+          )}
+
           <div className="p-6 lg:p-10">
             <div className="prose dark:prose-invert max-w-none prose-headings:scroll-mt-8 prose-headings:font-semibold prose-a:no-underline prose-headings:tracking-tight prose-headings:text-balance prose-p:tracking-tight prose-p:text-balance prose-lg">
               <DocsBody>
-                <MDX />
+                <MDXRemote
+                  source={post.bodyMarkdown}
+                  components={components}
+                />
               </DocsBody>
             </div>
           </div>
 
           <div className="p-6 lg:p-10 pt-0 border-t-1">
-            <CommentSection slug={slug} />
+            {/* comments, etc */}
           </div>
 
           <div className="mt-10">
             <ReadMoreSection
-              currentSlug={[slug]}
-              // @ts-ignore
-              currentTags={page.data.tags}
+              currentSlug={[post.slug]}
+              currentTags={post.tags}
             />
           </div>
         </main>
 
         <aside className="hidden lg:block w-[350px] flex-shrink-0 p-6 lg:p-10 bg-muted/60 dark:bg-muted/20">
           <div className="sticky top-20 space-y-8">
-            {
-              // @ts-ignore
-              page.data.author && isValidAuthor(page.data.author) && (
-                <AuthorCard author={getAuthor(page.data.author)} />
-              ) as any}
             <div className="border border-border rounded-lg p-6 bg-card">
               <TableOfContents />
             </div>
-            {/* <PromoContent variant="desktop" /> */}
-            <ViewCounter slug={slug} className="font-medium text-muted-foreground" />
 
+            <ViewCounter
+              slug={post.slug}
+              className="font-medium text-muted-foreground"
+            />
           </div>
         </aside>
       </div>
 
       <MobileTableOfContents />
-
     </div>
   );
 }

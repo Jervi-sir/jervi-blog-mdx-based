@@ -57,7 +57,7 @@ export default function CodeBlock({ children, className, ...rest }: PreProps) {
 
       {/* language pill (optional) */}
       {lang && (
-        <span className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md border border-border/60 bg-background/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <span className="pointer-events-none absolute right-10 top-2.5 z-10 rounded-md border border-border/60 bg-background/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
           {lang}
         </span>
       )}
@@ -67,7 +67,7 @@ export default function CodeBlock({ children, className, ...rest }: PreProps) {
         ref={preRef}
         {...rest}
         className={[
-          "bg-fd-secondary rounded-lg border text-[13px] py-3.5 overflow-auto max-h-[600px] fd-scroll-container",
+          "bg-fd-secondary rounded-lg border text-[13px] py-3.5 px-3 overflow-auto max-h-[600px] fd-scroll-container",
           className || "",
         ].join(" ")}
       >
