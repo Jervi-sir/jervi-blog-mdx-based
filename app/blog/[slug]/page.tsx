@@ -13,8 +13,9 @@ import { ReadMoreSection } from "@/components/read-more-section";
 import { FlickeringGrid } from "@/components/magicui/flickering-grid";
 import { HashScrollHandler } from "@/components/hash-scroll-handler";
 import { ViewCounter } from "@/components/view-counter";
-import { useMDXComponents } from "@/mdx-components";
+import { useMDXComponents as getMDXComponents } from "@/mdx-components";
 import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -53,13 +54,20 @@ async function getPost(slug: string, preview = false) {
   return post;
 }
 
-export default async function BlogPost({ params, searchParams }: PageProps) {
-  // ✅ await the dynamic APIs
-  const { slug } = await params;
-  const resolvedSearchParams = searchParams
-    ? await searchParams
-    : undefined;
+// Edge-compatible IP hashing
+async function hashIp(ip: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
+export default async function BlogPost({ params, searchParams }: PageProps) {
+  // ✅ dynamic APIs must be awaited
+  const headersList = await headers();
+  const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const previewMode = resolvedSearchParams?.preview === "1";
 
   const post = await getPost(slug, previewMode);
@@ -68,10 +76,54 @@ export default async function BlogPost({ params, searchParams }: PageProps) {
     notFound();
   }
 
+  // 🔢 Log view + increment count (only for non-preview)
+  if (!previewMode) {
+    const ipHeader =
+      headersList.get("x-forwarded-for") ||
+      headersList.get("x-real-ip") ||
+      null;
+
+    const ip = ipHeader ? ipHeader.split(",")[0].trim() : null;
+    const userAgent = headersList.get("user-agent") || null;
+
+    let ipHash: string | null = null;
+    if (ip) {
+      try {
+        ipHash = await hashIp(ip);
+      } catch (e) {
+        console.error("Failed to hash IP in blog page", e);
+        ipHash = null;
+      }
+    }
+
+    await Promise.all([
+      prisma.blogPost
+        .update({
+          where: { slug },
+          data: {
+            views: { increment: 1 },
+          },
+        })
+        .catch((e) => {
+          console.error("Failed to increment views on blog page", e);
+        }),
+      prisma.blogView
+        .create({
+          data: {
+            postSlug: slug,
+            ip, // set to null if you only want ipHash
+            ipHash,
+            userAgent,
+          },
+        })
+        .catch((e) => {
+          console.error("Failed to create BlogView on blog page", e);
+        }),
+    ]);
+  }
+
   const parsedDate = coerceDate(post.publishedAt ?? post.createdAt);
   const formattedDate = parsedDate ? formatDate(parsedDate) : "";
-
-  const components = useMDXComponents();
 
   return (
     <div className="min-h-screen bg-background">
@@ -155,7 +207,7 @@ export default async function BlogPost({ params, searchParams }: PageProps) {
               <DocsBody>
                 <MDXRemote
                   source={post.bodyMarkdown}
-                  components={components}
+                  components={getMDXComponents()}
                 />
               </DocsBody>
             </div>
@@ -167,7 +219,7 @@ export default async function BlogPost({ params, searchParams }: PageProps) {
 
           <div className="mt-10">
             <ReadMoreSection
-              currentSlug={[post.slug]}
+              currentSlug={post.slug}
               currentTags={post.tags}
             />
           </div>
@@ -180,7 +232,7 @@ export default async function BlogPost({ params, searchParams }: PageProps) {
             </div>
 
             <ViewCounter
-              slug={post.slug}
+              nb_views={post.views}
               className="font-medium text-muted-foreground"
             />
           </div>

@@ -2,6 +2,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export function CalloutWithImage({
   children,
@@ -19,9 +20,9 @@ export function CalloutWithImage({
       <div className="flex-1 flex-col">
         {children}
       </div>
-      <img
+      <Image
         src={image}
-        alt={alt}
+        alt={alt ?? ''}
         className="rounded-lg border object-cover"
       />
     </div>

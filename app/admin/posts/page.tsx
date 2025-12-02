@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import BlogPostPreview from "./blog-post-preview";
 
 type BlogPost = {
   id: string;
@@ -45,6 +46,14 @@ const emptyForm: PostFormState = {
   published: false,
 };
 
+const generateSlug = (text: string) => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+};
+
 export default function AdminPostsPage() {
   const router = useRouter();
 
@@ -54,7 +63,6 @@ export default function AdminPostsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewKey, setPreviewKey] = useState(0); // 🔑 force iframe reload
 
   // Load posts
   useEffect(() => {
@@ -97,28 +105,27 @@ export default function AdminPostsPage() {
       published: p.published,
     });
     setError(null);
-    setPreviewKey((k) => k + 1); // refresh preview when switching post
   }, [selectedId, posts]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+
+    setForm((f) => {
+      const newState = { ...f, [name]: value };
+
+      // STRICT SYNC: If title changes, force slug to match
+      if (name === "title") {
+        newState.slug = generateSlug(value);
+      }
+
+      return newState;
+    });
   }
 
   function handleTogglePublished(value: boolean) {
     setForm((f) => ({ ...f, published: value }));
-  }
-
-  function generateSlugFromTitle() {
-    if (!form.title) return;
-    const slug = form.title
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-");
-    setForm((f) => ({ ...f, slug }));
   }
 
   async function handleSave() {
@@ -177,7 +184,6 @@ export default function AdminPostsPage() {
       }
 
       router.refresh();
-      setPreviewKey((k) => k + 1); // reload preview after save
     } catch (e) {
       console.error(e);
       setError("Network error while saving");
@@ -203,7 +209,6 @@ export default function AdminPostsPage() {
       setSelectedId(null);
       setForm(emptyForm);
       router.refresh();
-      setPreviewKey((k) => k + 1);
     } catch (e) {
       console.error(e);
       setError("Network error while deleting");
@@ -275,8 +280,8 @@ export default function AdminPostsPage() {
               {selectedId === "new"
                 ? "New post"
                 : selectedId
-                ? "Edit post"
-                : "Select a post"}
+                  ? "Edit post"
+                  : "Select a post"}
             </h2>
             {selectedPost && (
               <p className="text-xs text-muted-foreground">
@@ -332,16 +337,6 @@ export default function AdminPostsPage() {
             >
               {saving ? "Saving…" : "Save"}
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setPreviewKey((k) => k + 1)}
-              disabled={!form.slug}
-            >
-              Reload preview
-            </Button>
           </div>
         </div>
 
@@ -368,21 +363,19 @@ export default function AdminPostsPage() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="slug">Slug</Label>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      size="sm"
-                      onClick={generateSlugFromTitle}
-                    >
-                      From title
-                    </Button>
+                    <span className="text-[10px] text-muted-foreground">
+                      Auto-generated from title
+                    </span>
                   </div>
                   <Input
                     id="slug"
                     name="slug"
                     value={form.slug}
-                    onChange={handleChange}
-                    placeholder="my-first-blog-post"
+                    // We don't need an onChange for this specific input anymore 
+                    // because it's disabled, but React likes it defined or readOnly.
+                    readOnly
+                    disabled
+                    className="bg-muted text-muted-foreground cursor-not-allowed"
                   />
                 </div>
 
@@ -435,7 +428,7 @@ export default function AdminPostsPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="bodyMarkdown">Body (Markdown / MDX)</Label>
                 <span className="text-xs text-muted-foreground">
-                  Preview uses the real /blog page (MDXRemote)
+                  Live preview uses the real blog layout (MDXRemote)
                 </span>
               </div>
 
@@ -456,16 +449,25 @@ export default function AdminPostsPage() {
                 {/* Right: preview */}
                 <div className="lg:sticky lg:top-20 self-start">
                   <div className="border rounded-md bg-muted/40 overflow-hidden max-h-[400px] md:max-h-[500px] lg:max-h-[calc(100vh-6rem)]">
-                    {form.slug ? (
-                      <iframe
-                        key={previewKey}
-                        src={`/blog/${form.slug}?preview=1`}
-                        className="w-full h-[300px] md:h-[400px] lg:h-[calc(100vh-6rem)] border-0"
+                    {form.title || form.bodyMarkdown || form.description ? (
+                      <BlogPostPreview
+                        slug={form.slug || "draft-slug"}
+                        title={form.title || "Untitled post"}
+                        description={form.description || null}
+                        bodyMarkdown={form.bodyMarkdown}
+                        tags={form.tags
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter(Boolean)}
+                        thumbnailUrl={form.thumbnailUrl || null}
+                        publishedAt={selectedPost?.publishedAt ?? null}
+                        createdAt={selectedPost?.createdAt ?? null}
                       />
                     ) : (
                       <div className="h-full flex items-center justify-center p-4">
                         <p className="text-xs text-muted-foreground text-center">
-                          Set a slug and save the post to see a preview here.
+                          Start typing a title or body to see a live preview of
+                          your blog post here.
                         </p>
                       </div>
                     )}

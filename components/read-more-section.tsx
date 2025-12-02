@@ -1,13 +1,20 @@
 /* eslint-disable @next/next/no-img-element */
-import { docs, meta } from "@/.source";
-import { loader } from "fumadocs-core/source";
-import { createMDXSource } from "fumadocs-mdx";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-const blogSource = loader({
-  baseUrl: "/blog",
-  source: createMDXSource(docs, meta),
-});
+type ReadMoreSectionProps = {
+  currentSlug: string;
+  currentTags?: string[];
+};
+
+function coerceDate(value: unknown): Date | null {
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (typeof value === "string" || typeof value === "number") {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
 
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("en-US", {
@@ -17,49 +24,63 @@ const formatDate = (date: Date): string => {
   });
 };
 
-interface BlogData {
-  title: string;
-  description: string;
-  date: string;
-  tags?: string[];
-  featured?: boolean;
-  readTime?: string;
-  author?: string;
-  authorImage?: string;
-  thumbnail?: string;
-}
-
-interface BlogPage {
-  url: string;
-  data: BlogData;
-}
-
-interface ReadMoreSectionProps {
-  currentSlug: string[];
-  currentTags?: string[];
-}
-
-export function ReadMoreSection({
+export async function ReadMoreSection({
   currentSlug,
   currentTags = [],
 }: ReadMoreSectionProps) {
-  const allPages = blogSource.getPages() as BlogPage[];
+  // 1) Get other published posts from Prisma
+  const posts = await prisma.blogPost.findMany({
+    where: {
+      slug: { not: currentSlug },
+      published: true,
+    },
+    orderBy: [
+      // fallback sort by publishedAt / createdAt
+      { publishedAt: "desc" },
+      { createdAt: "desc" },
+    ],
+    select: {
+      slug: true,
+      title: true,
+      description: true,
+      tags: true,
+      thumbnailUrl: true,
+      publishedAt: true,
+      createdAt: true,
+    },
+  });
 
-  const currentUrl = `/blog/${currentSlug.join("/")}`;
+  if (!posts || posts.length === 0) {
+    return null;
+  }
 
-  const otherPosts = allPages
-    .filter((page) => page.url !== currentUrl)
-    .map((page) => {
+  // 2) Compute relevance score + date for each post
+  const scoredPosts = posts
+    .map((post) => {
       const tagOverlap = currentTags.filter((tag) =>
-        page.data.tags?.includes(tag)
+        post.tags?.includes(tag),
       ).length;
 
+      const date =
+        coerceDate(post.publishedAt) ?? coerceDate(post.createdAt);
+
       return {
-        ...page,
+        ...post,
+        url: `/blog/${post.slug}`,
         relevanceScore: tagOverlap,
-        date: new Date(page.data.date),
+        date,
       };
     })
+    .filter((p) => p.date !== null) as Array<
+      ReturnType<typeof Object> & { date: Date; relevanceScore: number }
+    >;
+
+  if (scoredPosts.length === 0) {
+    return null;
+  }
+
+  // 3) Sort by tag overlap first, then by date desc
+  const otherPosts = scoredPosts
     .sort((a, b) => {
       if (a.relevanceScore !== b.relevanceScore) {
         return b.relevanceScore - a.relevanceScore;
@@ -83,28 +104,33 @@ export function ReadMoreSection({
 
             return (
               <Link
-                key={post.url}
+                key={post.slug}
                 href={post.url}
                 className="group grid grid-cols-1 lg:grid-cols-12 items-center gap-4 cursor-pointer"
               >
-                {post.data.thumbnail && (
+                {post.thumbnailUrl && (
                   <div className="flex-shrink-0 col-span-1 lg:col-span-4">
                     <div className="relative w-full h-full">
                       <img
-                        src={post.data.thumbnail}
-                        alt={post.data.title}
+                        src={post.thumbnailUrl}
+                        alt={post.title}
                         className="w-full h-full object-cover rounded-lg group-hover:opacity-80 transition-opacity"
                       />
                     </div>
                   </div>
                 )}
+
                 <div className="space-y-2 flex-1 col-span-1 lg:col-span-8">
                   <h3 className="text-lg group-hover:underline underline-offset-4 font-semibold text-card-foreground group-hover:text-primary transition-colors line-clamp-2">
-                    {post.data.title}
+                    {post.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm line-clamp-3 group-hover:underline underline-offset-4">
-                    {post.data.description}
-                  </p>
+
+                    {post.description && (
+                      <p className="text-muted-foreground text-sm line-clamp-3 group-hover:underline underline-offset-4">
+                        {post.description}
+                      </p>
+                    )}
+
                   <time className="block text-xs font-medium text-muted-foreground">
                     {formattedDate}
                   </time>

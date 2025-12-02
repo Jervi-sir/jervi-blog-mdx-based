@@ -2,14 +2,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-interface Params {
-  params: { id: string };
-}
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
 // GET /api/admin/posts/:id
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(_req: Request, { params }: RouteContext) {
+  const { id } = await params;
+
   const post = await prisma.blogPost.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!post) {
@@ -20,7 +22,8 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 // PUT /api/admin/posts/:id
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(req: Request, { params }: RouteContext) {
+  const { id } = await params;
   const body = await req.json();
 
   const {
@@ -42,7 +45,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   try {
     const post = await prisma.blogPost.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         slug,
         title,
@@ -66,10 +69,12 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 // DELETE /api/admin/posts/:id
-export async function DELETE(_req: Request, { params }: Params) {
+export async function DELETE(_req: Request, { params }: RouteContext) {
+  const { id } = await params;
+
   try {
     await prisma.blogPost.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ ok: true });

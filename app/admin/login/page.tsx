@@ -1,13 +1,26 @@
-// app/admin/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        </div>
+      }
+    >
+      <AdminLoginClient />
+    </Suspense>
+  );
+}
+
+function AdminLoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
